@@ -8,7 +8,9 @@ target_include_directories(process_logger_interface
 # Variant 1: core_shared_lib
 add_subdirectory(core_shared_lib)
 
+# Variant 2: main_owner
+add_subdirectory(main_owner)
+
 # Future variants (commented out for now)
-# add_subdirectory(main_owner)
 # add_subdirectory(dlsym_default)
 # add_subdirectory(shared_memory)
