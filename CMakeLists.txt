@@ -9,6 +9,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 add_subdirectory(tu_scope)
 add_subdirectory(dso_scope)
-# add_subdirectory(thread_scope)
+add_subdirectory(thread_scope)
 # add_subdirectory(process_scope)
 # add_subdirectory(os_scope)
