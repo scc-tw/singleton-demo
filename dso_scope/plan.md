@@ -43,8 +43,9 @@ inline Logger& get_logger() { return g_logger; }
 ```cpp
 #include "logger.hpp"
 
-extern "C" void plugin_a_entry() {
-    std::cout << "[A] " << &get_logger() << "\n";
+// Export this function so main can call it
+extern "C" __attribute__((visibility("default"))) void plugin_a_entry() {
+    std::cout << "[plugin_a] logger @" << &get_logger() << "\n";
 }
 ```
 
@@ -62,18 +63,27 @@ int main() {
 }
 ```
 
-## CMakeLists.txt 概要
+## CMakeLists.txt
 
 ```cmake
-add_library(plugin_a SHARED libplugin_a.cpp)
-add_library(plugin_b SHARED libplugin_b.cpp)
+# Plugin A shared library
+add_library(dso_plugin_a SHARED libplugin_a.cpp)
+target_include_directories(dso_plugin_a PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+# IMPORTANT: Hide symbols to demonstrate per-DSO behavior
+target_compile_options(dso_plugin_a PRIVATE -fvisibility=hidden)
 
-target_include_directories(plugin_a PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(plugin_b PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+# Plugin B shared library
+add_library(dso_plugin_b SHARED libplugin_b.cpp)
+target_include_directories(dso_plugin_b PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_options(dso_plugin_b PRIVATE -fvisibility=hidden)
 
+# Main executable
 add_executable(dso_scope_demo main.cpp)
-target_link_libraries(dso_scope_demo PRIVATE plugin_a plugin_b)
+target_link_libraries(dso_scope_demo PRIVATE dso_plugin_a dso_plugin_b)
 ```
+
+> **Note**: 使用 `-fvisibility=hidden` 確保 inline symbol 不會被 dynamic linker 合併。
+> Plugin 的 entry function 需要明確標記 `__attribute__((visibility("default")))` 才能被 main 呼叫。
 
 ## 預期結果
 
