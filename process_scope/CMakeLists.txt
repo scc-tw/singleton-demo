@@ -14,5 +14,5 @@ add_subdirectory(main_owner)
 # Variant 3: dlsym_default
 add_subdirectory(dlsym_default)
 
-# Future variants (commented out for now)
-# add_subdirectory(shared_memory)
+# Variant 4: shared_memory
+add_subdirectory(shared_memory)
