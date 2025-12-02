@@ -1,5 +1,7 @@
 # C++ Singleton Scope Tutorial Report
 
+Gamma slides: https://gamma.app/docs/C-Singleton-Scope-Tutorial-Report-2mqxzk0kxt5lx2d
+
 ## 1. Overview
 
 ### What is the Singleton Pattern?
