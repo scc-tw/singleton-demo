@@ -3,7 +3,7 @@
 ## 目標
 
 展示 `static` vs `inline` variable 在多個 `.cpp` 裡的差異：
-- **per-TU**：每個 translation unit 各有一份（non-inline static）
+- **per-TU**：每個 translation unit 各有一份（header 中的 static）
 - **per-binary**：整個執行檔只有一份（inline variable）
 
 ## 檔案結構
@@ -12,11 +12,11 @@
 tu_scope/
   CMakeLists.txt
   logger.hpp            # Logger class 定義
-  logger_static.cpp     # non-inline static，每個 TU 一份
-  logger_inline.hpp     # inline variable 版，整個 binary 一份
-  user_a.cpp            # 呼叫 static & inline 版印位址
-  user_b.cpp            # 呼叫 static & inline 版印位址
-  main.cpp              # 比較位址差異
+  logger_static.hpp     # static variable 版（陷阱示範）
+  logger_inline.hpp     # inline variable 版（正確做法）
+  user_a.cpp            # TU A：印出 static & inline 位址
+  user_b.cpp            # TU B：印出 static & inline 位址
+  main.cpp              # Entry point
 ```
 
 ## 核心概念
@@ -34,32 +34,58 @@ ODR 是 C++ 的核心規則，簡單來說：
 ### logger.hpp
 定義 `Logger` class，可以印出 `this` 位址。
 
-### logger_static.cpp
+### logger_static.hpp（陷阱示範）
 ```cpp
-static Logger g_logger_static;  // 每個 include 的 TU 都會有自己的一份
-Logger& get_logger_static() { return g_logger_static; }
+// WARNING: 每個 include 這個 header 的 TU 都會有自己的 g_logger_static
+static Logger g_logger_static;
+
+static Logger& get_logger_static() {
+    return g_logger_static;
+}
 ```
 
-### logger_inline.hpp
+### logger_inline.hpp（正確做法）
 ```cpp
-inline Logger g_logger_inline;  // C++17，整個 binary 只有一份
-inline Logger& get_logger_inline() { return g_logger_inline; }
+// C++17：整個 binary 只有一份
+inline Logger g_logger_inline;
+
+inline Logger& get_logger_inline() {
+    return g_logger_inline;
+}
 ```
 
 ## 預期結果
 
 執行 `tu_scope_demo` 後：
+
+```
+=== TU Scope Singleton Demo ===
+
+Logger ctor @0x...AAA   # user_a 的 static
+Logger ctor @0x...BBB   # user_a 的 inline (第一次)
+[user_a] static:  0x...AAA
+[user_a] inline:  0x...BBB
+
+Logger ctor @0x...CCC   # user_b 的 static (不同！)
+[user_b] static:  0x...CCC
+[user_b] inline:  0x...BBB   # 同一個！
+
+=== Expected Result ===
+static:  user_a != user_b (per-TU)
+inline:  user_a == user_b (per-binary)
+```
+
 - `get_logger_static()` 在 user_a 和 user_b 印出**不同**位址（per-TU）
 - `get_logger_inline()` 在 user_a 和 user_b 印出**相同**位址（per-binary）
 
-## CMakeLists.txt 概要
+## CMakeLists.txt
 
 ```cmake
 add_library(tu_scope_lib
-    logger_static.cpp
     user_a.cpp
     user_b.cpp
 )
+target_include_directories(tu_scope_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_executable(tu_scope_demo main.cpp)
 target_link_libraries(tu_scope_demo PRIVATE tu_scope_lib)
@@ -70,3 +96,10 @@ target_link_libraries(tu_scope_demo PRIVATE tu_scope_lib)
 1. `static` 變數在 header 的陷阱
 2. C++17 `inline` variable 解決 ODR 問題
 3. Translation Unit 的定義與邊界
+
+## 對比表
+
+| 類型 | Header 寫法 | 結果 | 說明 |
+|-----|------------|------|-----|
+| `static` | `static Logger g;` | 每 TU 各一份 | Internal linkage，各 TU 獨立 |
+| `inline` | `inline Logger g;` | 整個 binary 一份 | C++17 ODR 解決方案 |

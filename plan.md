@@ -65,7 +65,9 @@ singleton-scope-lab/
 │   ├── plan.md
 │   ├── CMakeLists.txt
 │   ├── thread_logger.hpp
-│   └── main.cpp
+│   ├── basic_demo.cpp
+│   ├── mixed_demo.cpp
+│   └── libworker.cpp
 │
 ├── process_scope/          # 4. Process level (重頭戲)
 │   ├── plan.md
